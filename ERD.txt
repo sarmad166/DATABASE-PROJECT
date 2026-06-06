@@ -1,0 +1,318 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+// ============================================================================
+// LEVEL 01: ADMINISTRATIVE & UTILITY MASTER LOOKUPS  
+// ============================================================================
+
+Table Water_Source {
+  water_source_id tinyint [pk, increment]
+  source_name varchar(100) [not null, unique]
+}
+
+Table Lighting_Source {
+  lighting_source_id tinyint [pk, increment]
+  source_name varchar(100) [not null, unique]
+}
+
+Table Cooking_Fuel_Source {
+  fuel_source_id tinyint [pk, increment]
+  fuel_source_name varchar(100) [not null, unique]
+}
+
+Table Washroom_Status {
+  washroom_status_id tinyint [pk, increment]
+  status_name varchar(100) [not null, unique]
+}
+
+Table Kitchen_Status {
+  kitchen_status_id tinyint [pk, increment]
+  status_name varchar(100) [not null, unique]
+}
+
+Table Household_Category {
+  household_category_id tinyint [pk, increment]
+  category_name varchar(100) [not null, unique]
+  description text
+}
+
+Table Residential_Status_Type {
+  residential_status_type_id tinyint [pk, increment]
+  status_name varchar(100) [not null, unique]
+  description text
+}
+
+Table Biological_Sex {
+  sex_id tinyint [pk, increment]
+  sex_name varchar(30) [not null, unique]
+}
+
+Table Religion {
+  religion_id tinyint [pk, increment]
+  religion_name varchar(100) [not null, unique]
+}
+
+Table Mother_Tongue {
+  mother_tongue_id tinyint [pk, increment]
+  tongue_name varchar(100) [not null, unique]
+}
+
+Table Education_Level {
+  education_level_id tinyint [pk, increment]
+  level_name varchar(100) [not null, unique]
+}
+
+Table Employment_Status {
+  employment_status_id tinyint [pk, increment]
+  status_name varchar(100) [not null, unique]
+}
+
+Table Marital_Status {
+  marital_status_id tinyint [pk, increment]
+  status_name varchar(50) [not null, unique]
+}
+
+Table Disability_Type {
+  disability_type_id tinyint [pk, increment]
+  disability_name varchar(100) [not null, unique]
+}
+
+Table Occupation {
+  occupation_id smallint [pk, increment]
+  occupation_name varchar(150) [not null, unique]
+}
+
+Table Industry {
+  industry_id smallint [pk, increment]
+  industry_name varchar(150) [not null, unique]
+}
+
+Table Relationship_Type {
+  relationship_type_id tinyint [pk, increment]
+  relationship_name varchar(50) [not null, unique]
+}
+
+Table Nationality {
+  nationality_id tinyint [pk, increment]
+  country_name varchar(100) [not null, unique]
+  citizenship_status varchar [note: "ENUM('Citizen', 'Foreign_Expat', 'Refugee', 'Stateless')"]
+}
+
+Table Union_Council_Classification {
+  union_council_classification_id tinyint [pk, increment]
+  classification_name varchar(100) [not null, unique]
+  description text
+}
+
+Table Census_Cycle {
+  census_id smallint [pk, increment]
+  census_year int [not null, unique]
+  census_title varchar(100) [not null]
+  start_date date
+  end_date date
+}
+
+Table Structure_Type {
+  structure_type_id tinyint [pk, increment]
+  type_name varchar(100) [not null, unique]
+  description text
+}
+
+Table Commercial_Sector_Type {
+  commercial_type_id tinyint [pk, increment]
+  commercial_type_name varchar(100) [not null, unique]
+  description text
+}
+
+
+// ============================================================================
+// LEVEL 02: GEOGRAPHIC HIERARCHY  
+// ============================================================================
+
+Table Province {
+  province_id tinyint [pk, increment]
+  province_name varchar(100) [not null, unique]
+}
+
+Table Division {
+  division_id smallint [pk, increment]
+  division_name varchar(100) [not null]
+  province_id tinyint [ref: > Province.province_id]
+
+  Indexes {
+    (division_name, province_id) [unique]
+  }
+}
+
+Table District {
+  district_id smallint [pk, increment]
+  district_name varchar(100) [not null]
+  division_id smallint [ref: > Division.division_id]
+
+  Indexes {
+    (district_name, division_id) [unique]
+  }
+}
+
+Table Tehsil {
+  tehsil_id smallint [pk, increment]
+  tehsil_name varchar(100) [not null]
+  district_id smallint [ref: > District.district_id]
+
+  Indexes {
+    (tehsil_name, district_id) [unique]
+  }
+}
+
+Table Union_Council {
+  union_council_id int [pk, increment]
+  union_council_name varchar(100) [not null]
+  union_council_classification_id tinyint [ref: > Union_Council_Classification.union_council_classification_id]
+  tehsil_id smallint [ref: > Tehsil.tehsil_id]
+
+  Indexes {
+    (union_council_name, tehsil_id) [unique]
+  }
+}
+
+Table Census_Block {
+  census_block_id int [pk, increment]
+  census_block_code varchar(20) [unique, not null]
+  estimated_household_count int [default: 0, note: "CHECK >= 0"]
+  is_urban boolean [not null]
+  area_sq_km decimal(10,2)
+  union_council_id int [ref: > Union_Council.union_council_id]
+}
+
+
+// ============================================================================
+// LEVEL 03: ADMINISTRATIVE PERSONNEL & BASE STRUCTURE DATA
+// ============================================================================
+
+Table Census_Staff {
+  staff_id int [pk, increment]
+  first_name varchar(100) [not null]
+  last_name varchar(100) [not null]
+  staff_role varchar [not null, note: "ENUM('Supervisor', 'Enumerator', 'Quality_Checker', 'Data_Entry_Operator')"]
+  contact_number varchar(20)
+  email varchar(100)
+  employment_date date [not null]
+  assigned_census_block_id int [ref: > Census_Block.census_block_id]
+  supervisor_id int [ref: > Census_Staff.staff_id]
+}
+
+Table Structure {
+  structure_id int [pk, increment]
+  structure_address_no varchar(50) [not null]
+  gps_latitude decimal(9,6)
+  gps_longitude decimal(9,6)
+  created_date timestamp [default: `CURRENT_TIMESTAMP`]
+  structure_type_id tinyint [ref: > Structure_Type.structure_type_id]
+  water_source_id tinyint [ref: > Water_Source.water_source_id]
+  lighting_source_id tinyint [ref: > Lighting_Source.lighting_source_id]
+  fuel_source_id tinyint [ref: > Cooking_Fuel_Source.fuel_source_id]
+  washroom_status_id tinyint [ref: > Washroom_Status.washroom_status_id]
+  kitchen_status_id tinyint [ref: > Kitchen_Status.kitchen_status_id]
+  census_block_id int [ref: > Census_Block.census_block_id]
+
+}
+
+
+// ============================================================================
+// LEVEL 04: INHERITED STRUCTURAL BRANCHES 
+// ============================================================================
+
+Table Structure_Institution {
+  structure_id int [pk, ref: - Structure.structure_id]
+  institution_type varchar(100) [not null]
+  organization_name varchar(150) [not null]
+  population_count int [default: 0]
+  is_government boolean [not null, default: false]
+}
+
+Table Structure_Commercial {
+  structure_id int [pk, ref: - Structure.structure_id]
+  commercial_type_id tinyint [ref: > Commercial_Sector_Type.commercial_type_id]
+  business_name varchar(200) [default: "Unregistered"]
+  estimated_active_employees int [default: 0, note: "CHECK >= 0"]
+  has_industrial_power_connection boolean [not null, default: false]
+  has_active_license boolean [not null, default: false]
+}
+
+Table Structure_Residential {
+  structure_id int [pk, ref: - Structure.structure_id]
+  total_residential_units int [default: 1]
+}
+
+
+// ============================================================================
+// LEVEL 05: HOUSEHOLD & DOMESTIC COMPONENT REGISTRIES
+// ============================================================================
+
+Table Household {
+  household_id int [pk, increment]
+  household_sub_token varchar(10) [not null, default: "1"]
+  household_size int [default: 0, note: "CHECK >= 0"]
+  number_of_rooms int [not null, note: "CHECK >= 1"]
+  created_date timestamp [default: `CURRENT_TIMESTAMP`]
+  structure_id int [ref: > Structure.structure_id]
+  census_id smallint [ref: > Census_Cycle.census_id]
+  household_category_id tinyint [ref: > Household_Category.household_category_id]
+  residential_status_type_id tinyint [ref: > Residential_Status_Type.residential_status_type_id]
+  owner_sex_id tinyint [ref: > Biological_Sex.sex_id]
+  data_entry_operator_id int [ref: > Census_Staff.staff_id]
+
+  Indexes {
+    (structure_id, census_id, household_sub_token) [unique]
+  }
+}
+
+
+// ============================================================================
+// LEVEL 06: INDIVIDUAL CITIZEN REGISTRY & HISTORIES
+// ============================================================================
+
+Table Person {
+  person_id int [pk, increment]
+  first_name varchar(100) [not null]
+  last_name varchar(100) [not null]
+  cnic_number varchar(20) [unique, not null]
+  date_of_birth date [not null]
+  is_literate boolean [not null, default: false]
+  currently_attending_school boolean [default: false]
+  monthly_income decimal(10,2)
+  created_date timestamp [default: `CURRENT_TIMESTAMP`]
+  head_person_id int [ref: > Person.person_id]
+  household_id int [ref: > Household.household_id]
+  sex_id tinyint [ref: > Biological_Sex.sex_id]
+  nationality_id tinyint [default: 1, ref: > Nationality.nationality_id]
+  religion_id tinyint [ref: > Religion.religion_id]
+  mother_tongue_id tinyint [ref: > Mother_Tongue.mother_tongue_id]
+  marital_status_id tinyint [ref: > Marital_Status.marital_status_id]
+  relationship_type_id tinyint [ref: > Relationship_Type.relationship_type_id]
+  education_level_id tinyint [ref: > Education_Level.education_level_id]
+  employment_status_id tinyint [ref: > Employment_Status.employment_status_id]
+  occupation_id smallint [ref: > Occupation.occupation_id]
+  industry_id smallint [ref: > Industry.industry_id]
+  data_entry_operator_id int [ref: > Census_Staff.staff_id]
+}
+
+Table Person_Disability {
+  person_disability_id int [pk, increment]
+  disability_type_id tinyint [ref: > Disability_Type.disability_type_id]
+  person_id int [ref: > Person.person_id]
+
+
+  Indexes {
+    (person_id, disability_type_id) [unique]
+  }
+}
+
+Table Migration_History {
+  migration_id int [pk, increment]
+  migration_reason varchar(100)
+  year_of_migration int
+    person_id int [ref: > Person.person_id]
+  previous_district_id smallint [ref: > District.district_id]
+
+}
